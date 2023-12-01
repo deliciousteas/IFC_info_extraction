@@ -132,30 +132,63 @@ def Get_storey(model_path):
       #object occurrence has a proerty set assigned ,it has priority than shared type property sets
       # area are quantity set attribute
 
+
+"""
+获取slab总共有多少个
+单体的体积、厚度、周长、面积、顶部高度、底部高度
+位置
+"""
 def Get_Slabs(model_path):
    model=ifcopenshell.open(model_path)
    instance=model.by_type("IfcSlab")
-   #name | objectType choose one
+   instance_num=len(instance)
+   print('slab共有%d个实例：'%(instance_num))
+   print("------------------------------")
    for i in range(0,len(instance)):
       print(instance[i])
       Name = instance[i].Name
       ObjectType = instance[i].ObjectType
       # Floor: a floor slab ;Roof: roof slab;Landing: a landing iwthin a stair or ramp;Baseslab:mat foundation
       Type = instance[i].PredefinedType
+      print('IfcSlab的Name：%s, Type: %s ,Specified Type: %s, ' % (Name, ObjectType, Type))
+
+      #geomoetry property
+      psets = ifcopenshell.util.element.get_psets(instance[i], psets_only=True)
+      qtos = ifcopenshell.util.element.get_psets(instance[i], qtos_only=True)
+      print(psets.get('尺寸标注'))
 
       # PlaceMENTrETO可以判断是第一层还是第二层的内容
       ObjectPlacement = instance[i].ObjectPlacement
-
+      print('IFcSlab的参考坐标系：%s ,局部坐标系： %s,坐标位于：%s'%(ObjectPlacement.PlacementRelTo,ObjectPlacement.RelativePlacement,ObjectPlacement.RelativePlacement.Location))
       Representation = instance[i].Representation
-
-
-      print('IfcSlab的Name：%s, Type: %s ,Specified Type: %s, Location: %s,Representation:%s'%(Name,ObjectType,Type))
-      #关于objection
-      #todo：需要考虑反属性
-      print('IFcSlab的参考坐标系：%s ,局部坐标系： %s,坐标位于： %s'%(ObjectPlacement.PlacementRelTo,ObjectPlacement.RelativePlacement,ObjectPlacement.RelativePlacement.Location))
-      #关于representation
-      #todo:需要考虑反属性
+       #todo:representation需要考虑反属性
       print('IfcSlab的Representation Name:%s ,Description: %s,Representations:%s'%(Representation.Name,Representation.Description,Representation.Representations))
+      Shape_Representation=Representation.Representations
+      for j in range(0,len(Shape_Representation)):
+         print(Shape_Representation[j])
+         print('Shape_Representation的Identifier：%s ,type: %s ' % (Shape_Representation[j].RepresentationIdentifier, Shape_Representation[j].RepresentationType))
+         if Shape_Representation[j].RepresentationIdentifier=='Body':
+            for x in range(0, len(Shape_Representation[j].Items)):
+               # 扫掠体或者curve
+               print('Body第%d个Items:%s' % (x + 1, Shape_Representation[j].Items[x]))
+               area=Shape_Representation[j].Items[x].SweptArea
+               Position=Shape_Representation[j].Items[x].Position
+               ExtrudedDirection=Shape_Representation[j].Items[x].ExtrudedDirection
+               Depth=Shape_Representation[j].Items[x].Depth
+               print('Body的面积:%s, 坐标：%s , 方向：%s ,深度:%s'%(area,Position,ExtrudedDirection,Depth))
+               print('Position的Location：%s,Axis: %s,RefDirection:%s'%(Position.Location,Position.Axis,Position.RefDirection))
+         if Shape_Representation[j].RepresentationIdentifier=='FootPrint':
+            for x in range(0, len(Shape_Representation[j].Items)):
+               # 扫掠体或者curve
+               print('FootPrint第%d个Items:%s' % (x + 1, Shape_Representation[j].Items[x]))
+               Points=Shape_Representation[j].Items[x].Points
+               Segments=Shape_Representation[j].Items[x].Segments
+               SelfInterset=Shape_Representation[j].Items[x].SelfIntersect
+               print('FootPrint的point:%s, Segments：%s , SelfInterset：%s ' % (Points, Segments, SelfInterset))
+
+
+
+
 
 
       print("-----------------------------------------------")
@@ -171,7 +204,7 @@ if __name__ =='__main__':
  #todo 格式化存储在在txt文件中中。ifcplacement记录了非常多的1W多条
  #todo 将坐标信息存储在楼层这个层次？
  #todo 提取ifcductsegment所有instance
-Get_ProjectInfo("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc")
-Get_BuildingInfo("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc")
-Get_storey("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc")
+#Get_ProjectInfo("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc")
+#Get_BuildingInfo("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc")
+#Get_storey("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc")
 Get_Slabs("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc")

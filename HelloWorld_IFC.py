@@ -49,6 +49,7 @@ def Get_ProjectInfo(model_path):
    Site=instance.by_type('IfcSite')
    Space=instance.by_type('IfcSpace')
    print('RefLatitude:%s ,RefLongitude:%s ,RefElevation: %d'%(Site[0].RefLatitude,Site[0].RefLongitude,Site[0].RefElevation))
+   print("objectPlacement:%s ,Representation:%s"%(Site[0].ObjectPlacement,Site[0].Representation))
    print('Space：%s'%Space)
    print("----------------------------")
 
@@ -95,6 +96,8 @@ def Get_BuildingInfo(Model_path):
 
 """
 Ifcbuildingstrey：楼层名字、海拔高度、局部坐标、IfcDefinedInfo（没用就不输出）
+需要返回N N+1的楼层localplacement值，计算完换算单位。
+完成site-building-buildingstorey之间的坐标转换。
 """
 def Get_storey(model_path):
    model=ifcopenshell.open(model_path)
@@ -105,47 +108,62 @@ def Get_storey(model_path):
       print(instance[i])
       name=instance[i].Name
       elevation=instance[i].Elevation
+      print('Name:%s,Elevation: %s' % (name, elevation))
       ObjectPlacement=(instance[i].ObjectPlacement)
 
       #IfcLocalPlacement，定义参考坐标系，使用的局部坐标系?,par1：参考坐标系，par2 相对于par1的坐标转换
-      print('Name:%s,Elevation: %s'%(name,elevation))
+      print(ObjectPlacement)
+      Storey_cited_coor=ObjectPlacement.PlacementRelTo
+      Storey_cited_trans=ObjectPlacement.RelativePlacement.Location
+      print('buildingStorey参考: %s ,transofrmation:%s'%(Storey_cited_coor,Storey_cited_trans))
+
+      building_cited_coor=Storey_cited_coor.PlacementRelTo
+      building_cited_trans=Storey_cited_coor.RelativePlacement.Location
+      print('building参考: %s ,transofrmation:%s' % (building_cited_coor, building_cited_trans))
+
+      site_cited_coor=building_cited_coor.PlacementRelTo
+      site_cited_trans=building_cited_coor.RelativePlacement.Location
+      print('site参考: %s ,transofrmation:%s' % (site_cited_coor, site_cited_trans))
+
       print("----------------------------")
-
-
-      print("buildingStorey参考的ifcbuilding坐标系")
-      print(ObjectPlacement.PlacementRelTo)
-      print("ifcbuilding参考的ifcSite坐标系")
-      print(ObjectPlacement.PlacementRelTo.RelativePlacement)
-      print(ObjectPlacement.PlacementRelTo.PlacementRelTo)
-      print("ifciste原坐标系")
-      print(ObjectPlacement.PlacementRelTo.PlacementRelTo.RelativePlacement)
-      print(ObjectPlacement.PlacementRelTo.PlacementRelTo.RelativePlacement.Location)
-      print(ObjectPlacement.PlacementRelTo.RelativePlacement.Location)
-      print("buildingStorey参考的ifcbuilding坐标系的坐标变换：Z轴变换了")
-      print(ObjectPlacement.RelativePlacement)
-      print(ObjectPlacement.RelativePlacement.Location)
-
-
-
-
-
-
-
-
-
-
       #IsDefinedby INVERSE ATTRIBUTE,可能反属性中没有quantity 属性
       # property sets can by assigned to occurrence objects or an object type
-
       #IsTypedby,inverse attribute type和type_occurence，共享type的proerty sets
       #object occurrence has a proerty set assigned ,it has priority than shared type property sets
       # area are quantity set attribute
 
+def Get_Slabs(model_path):
+   model=ifcopenshell.open(model_path)
+   instance=model.by_type("IfcSlab")
+   #name | objectType choose one
+   for i in range(0,len(instance)):
+      print(instance[i])
+      Name = instance[i].Name
+      ObjectType = instance[i].ObjectType
+      # Floor: a floor slab ;Roof: roof slab;Landing: a landing iwthin a stair or ramp;Baseslab:mat foundation
+      Type = instance[i].PredefinedType
+
+      # PlaceMENTrETO可以判断是第一层还是第二层的内容
+      ObjectPlacement = instance[i].ObjectPlacement
+
+      Representation = instance[i].Representation
+
+
+      print('IfcSlab的Name：%s, Type: %s ,Specified Type: %s, Location: %s,Representation:%s'%(Name,ObjectType,Type))
+      #关于objection
+      #todo：需要考虑反属性
+      print('IFcSlab的参考坐标系：%s ,局部坐标系： %s,坐标位于： %s'%(ObjectPlacement.PlacementRelTo,ObjectPlacement.RelativePlacement,ObjectPlacement.RelativePlacement.Location))
+      #关于representation
+      #todo:需要考虑反属性
+      print('IfcSlab的Representation Name:%s ,Description: %s,Representations:%s'%(Representation.Name,Representation.Description,Representation.Representations))
+
+
+      print("-----------------------------------------------")
 
 
 
 if __name__ =='__main__':
- instance=ifcopenshell.open("D:\CimTestFile\SZW_HRZB_MEP_2F.ifc")
+
 
 
  print('接下来输出该IFC项目的项目基本信息：')
@@ -155,4 +173,5 @@ if __name__ =='__main__':
  #todo 提取ifcductsegment所有instance
 Get_ProjectInfo("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc")
 Get_BuildingInfo("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc")
-Get_storey("D:\CimTestFile\SZW_RFJD_ARC_2F.ifc")
+Get_storey("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc")
+Get_Slabs("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc")

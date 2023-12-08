@@ -1,0 +1,46 @@
+ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('ViewDefinition [ReferenceView_V1.2]','ExchangeRequirement [Architecture]'),'2;1');
+FILE_NAME('\X2\987976EE7F1653F7\X0\','2023-11-30T20:39:49+08:00',(''),(''),'ODA SDAI 22.12','23.0.1.318 - Exporter 23.0.1.318 - \X2\59077528\X0\ UI 23.0.1.318','');
+FILE_SCHEMA(('IFC4'));
+ENDSEC;
+
+DATA;
+#129=IfcCartesianPoint((137795.32910983794,135574.98714888692,0.))
+#130=IfcAxis2Placement3D(#129,#9,#8)
+#131=IfcLocalPlacement(#102,#130)
+#3=IfcCartesianPoint((0.,0.,0.))
+#133=IfcIndexedPolyCurve(#132,$,.F.)
+#134=IfcShapeRepresentation(#94,'Axis','Curve3D',(#133))
+#132=IfcCartesianPointList3D(((0.,-6.5028646270267866E-12,0.),(1675.0000000094949,-1.499201259471626E-12,0.)))
+#8=IfcDirection((0.,-1.,0.))
+#9=IfcDirection((0.,0.,1.))
+#15=IfcAxis2Placement3D(#3,$,$)
+#16=IfcLocalPlacement(#109,#15)
+#154=IfcIndexedPolygonalFaceWithVoids((1,2,3,4),((5,6,7,8)))
+#155=IfcIndexedPolygonalFaceWithVoids((9,10,11,12,13,14),((15,16,17,18)))
+#156=IfcIndexedPolygonalFace((2,1,12,11,10,9))
+#157=IfcIndexedPolygonalFace((12,1,4,13))
+#158=IfcIndexedPolygonalFace((2,9,14,3))
+#159=IfcIndexedPolygonalFace((6,5,16,15))
+#160=IfcIndexedPolygonalFace((5,8,17,16))
+#161=IfcIndexedPolygonalFace((8,7,18,17))
+#162=IfcIndexedPolygonalFace((7,6,15,18))
+#163=IfcIndexedPolygonalFace((4,3,14,13))
+#164=IfcCartesianPointList3D(((0.,-100.00000000001842,0.),(1675.0000000094949,-100.00000000001343,0.),(1675.0000000094949,-100.00000000001343,4299.9999999999991),(0.,-100.00000000001842,4299.9999999999991),(1037.499999999998,-100.00000000001532,2409.9999999980446),(1037.499999999998,-100.00000000001532,300.),(337.50000000000125,-100.00000000001742,300.),(337.50000000000125,-100.00000000001742,2409.9999999980446),(1675.0000000094949,99.999999999993079,0.),(1275.0000000009229,99.9999999999919,0.),(1175.0000000009284,99.999999999991601,0.),(0.,99.999999999988091,0.),(0.,99.999999999988091,4299.9999999999991),(1675.0000000094949,99.999999999993079,4299.9999999999991),(1037.499999999998,99.999999999991189,300.),(1037.499999999998,99.999999999991189,2409.9999999980446),(337.50000000000125,99.9999999999891,2409.9999999980446),(337.50000000000125,99.9999999999891,300.)))
+#165=IfcPolygonalFaceSet(#164,.T.,(#154,#155,#156,#157,#158,#159,#160,#161,#162,#163),$)
+#168=IfcShapeRepresentation(#95,'Body','Tessellation',(#165))
+#169=IfcProductDefinitionShape($,$,(#134,#168))
+#170=IfcWall('2nruR8WJTFIBooKwoBOktT',#20,'墙 : 基本墙 : 200厚普通墙',$,'基本墙:200厚普通墙',#131,#169,'417619',.NOTDEFINED.)
+#91=IfcAxis2Placement3D(#3,$,$)
+#92=IfcDirection((6.1230317691118863E-17,1.))
+#93=IfcGeometricRepresentationContext($,'Model',3,0.01,#91,#92)
+#94=IfcGeometricRepresentationSubContext('Axis','Model',*,*,*,*,#93,$,.GRAPH_VIEW.,$)
+#95=IfcGeometricRepresentationSubContext('Body','Model',*,*,*,*,#93,$,.MODEL_VIEW.,$)
+#101=IfcAxis2Placement3D(#3,$,$)
+#102=IfcLocalPlacement(#16,#101)
+#108=IfcAxis2Placement3D(#3,$,$)
+#109=IfcLocalPlacement($,#108)
+
+ENDSEC;
+END-ISO-10303-21;

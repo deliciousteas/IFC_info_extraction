@@ -1,6 +1,7 @@
 import ifcopenshell
 import ifcopenshell.util
 import re
+import os
 
 
 def extracte_ids(text):
@@ -56,7 +57,7 @@ def model_graph(path,id_array,graph=None):
         else:
             print(f"{sub_ids[0]}已经是子节点了")
 
-    print(graph)
+    #print(graph)
     return graph
 
 
@@ -76,17 +77,54 @@ def extracte_meta_info(path):
     #site=model.by_type("Ifcsite")
     #project=model.by_type("IfcProject")
 
+def create_newIFC(ifcsource,path,filename):
+    file_path=os.path.join(path,filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        print(f"DELETED EXISTING FILE:{filename}")
+    with open(file_path,'w')as new_ifc_file:
+        with open(ifcsource,'r')as ifcFile:
+            for line in ifcFile:
+                new_ifc_file.write(line)
+                if line.strip()=="ENDSEC;":
+                    break
+                    ifcFile.close()
+    print(f"New IFC file created: {filename}")
+
 
 if __name__ =='__main__':
 
-    #extracte_meta_info("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc")
+    extracte_meta_info("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc")
     pattern='''#\d+'''
     model=ifcopenshell.open("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc")
     walls=model.by_type("Ifcwall")
 
 
     preprocess=modl_preprocess("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc","Ifcwall")
-    model_graph("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc",preprocess)
+    relationship=model_graph("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc",preprocess)
+    #(relationship)
+
+    create_newIFC("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc","D:\IFCOpenshell_python_version\Anaconda_ifc\IFC-source","newFile.ifc")
+
+    #把所有相关位置和构形的id记录下来
+    all_key=list(relationship.keys())
+    all_values = [val for sublist in relationship.values() for val in sublist]
+    new_ifclist=list(set(all_key+all_values))
+    print(new_ifclist)
+    with open("D:\IFCOpenshell_python_version\Anaconda_ifc\IFC-source\\newFile.ifc", 'a') as new_file:
+        new_file.write("\n")
+        new_file.write("DATA;\n")
+        for i in range(0,len(new_ifclist)):
+            instance=str(model.by_id(new_ifclist[i]))
+            new_file.write(instance+'\n')
+        new_file.write("\n")
+        new_file.write("ENDSEC;\n")
+        new_file.write("END-ISO-10303-21;")
+
+
+
+
+
     # for x in range(len(walls)):
     #     wall=walls[x]
     #     #预处理

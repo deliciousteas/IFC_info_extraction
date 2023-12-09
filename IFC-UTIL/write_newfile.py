@@ -29,13 +29,27 @@ def WriteNewFIle(path_file,save_path,filename):
             new_file.write("\n")
             # add product and project info
             project_ids=extracte_metaInfo.extracte_project_structure(path_file)
-            prudtct_ids=extracte_metaInfo.extracte_ids(path_file)
-            for i in  range(len(project_ids)):
-                instance = str(model.by_id(project_ids[i]))
-                new_file.write(instance+'\n')
-            for j in range(len(prudtct_ids)):
-                instance = str(model.by_id(prudtct_ids[j]))
-                new_file.write(instance + '\n')
+            print(project_ids)
+
+
+            prudtct_ids=extracte_metaInfo.extracte_entity_structure(path_file,"IfcWall")
+            print(prudtct_ids)
+            list_all=[]
+            for i in range(len(project_ids)):
+                list_all.append(project_ids[i])
+            for i in range(len(prudtct_ids)):
+                list_all.append(prudtct_ids[i])
+            list_all=list(set(list_all))
+            print(list_all)
+            for j in range(len(list_all)):
+                instance = str(model.by_id(list_all[j]))
+                new_file.write(instance + ';' + '\n')
+            # for i in  range(len(project_ids)):
+            #     instance = str(model.by_id(project_ids[i]))
+            #     new_file.write(instance+';'+'\n')
+            # for j in range(len(prudtct_ids)):
+            #     instance = str(model.by_id(prudtct_ids[j]))
+            #     new_file.write(instance + ';'+'\n')
             new_file.write("\n")
             new_file.write("ENDSEC;\n")
             new_file.write("END-ISO-10303-21;")

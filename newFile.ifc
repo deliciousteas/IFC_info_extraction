@@ -6,6 +6,7 @@ FILE_SCHEMA(('IFC4'));
 ENDSEC;
 
 DATA;
+#98=IfcProject('3qE4t94TbFIhl3cH5phd7r',#20,'И║╧Г⌡╝Г╪√Е▐╥',$,$,'И║╧Г⌡╝Е░█Г╖╟','И║╧Г⌡╝Г┼╤Ф─│',(#93),#90)
 #129=IfcCartesianPoint((137795.32910983794,135574.98714888692,0.))
 #130=IfcAxis2Placement3D(#129,#9,#8)
 #131=IfcLocalPlacement(#102,#130)
@@ -31,7 +32,7 @@ DATA;
 #165=IfcPolygonalFaceSet(#164,.T.,(#154,#155,#156,#157,#158,#159,#160,#161,#162,#163),$)
 #168=IfcShapeRepresentation(#95,'Body','Tessellation',(#165))
 #169=IfcProductDefinitionShape($,$,(#134,#168))
-#170=IfcWall('2nruR8WJTFIBooKwoBOktT',#20,'г╫ : ╩Ы╠╬г╫ : 200╨Яфум╗г╫',$,'╩Ы╠╬г╫:200╨Яфум╗г╫',#131,#169,'417619',.NOTDEFINED.)
+#170=IfcWall('2nruR8WJTFIBooKwoBOktT',#20,'г╫ : О©╫О©╫О©╫О©╫г╫ : 200О©╫О©╫О©╫О©╫м╗г╫',$,'О©╫О©╫О©╫О©╫г╫:200О©╫О©╫О©╫О©╫м╗г╫',#131,#169,'417619',.NOTDEFINED.)
 #91=IfcAxis2Placement3D(#3,$,$)
 #92=IfcDirection((6.1230317691118863E-17,1.))
 #93=IfcGeometricRepresentationContext($,'Model',3,0.01,#91,#92)

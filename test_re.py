@@ -94,6 +94,8 @@ def create_newIFC(ifcsource,path,filename):
 
 if __name__ =='__main__':
 
+    #第一步应该是提取文件meta信息和project-site-building等信息
+    #第二部，提取product-level info
     extracte_meta_info("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc")
     pattern='''#\d+'''
     model=ifcopenshell.open("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc")

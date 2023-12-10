@@ -34,7 +34,32 @@ def extracte_project_structure(path_file)-> list:
     for i in range(len(sotrey)):
         str_list.append(sotrey[i])
     #提取spatcial_structure 的reference id,第二次输出的是ids的引用id
+    print(str_list)
+    tmp_list=[]
+    #添加空间结构的关系依赖
+    #todo:验证product和building之间的关系从product取还是从buidling拿
+    for i in range(len(str_list)):
+        print(str_list[i].is_a())
+        if len(str_list[i].IsDecomposedBy) !=0:
+            tmp_list.append(str_list[i].IsDecomposedBy[0])
+        if len(str_list[i].Decomposes )!=0:
+            tmp_list.append(str_list[i].Decomposes[0])
+        if str_list[i].is_a()!="IfcProject":
+            if len(str_list[i].ContainsElements)!=0:
+                print(str_list[i].ContainsElements)
+                tmp_list.append(str_list[i].ContainsElements[0])
+        # if len(str_list[i].ServicedBySystems) != 0:
+        #     str_list.append(str_list[i].ServicedBySystems[0])
+        # if len(str_list[i].ReferencesElements) != 0:
+        #     str_list.append(str_list[i].ReferencesElements[0])
+    print(tmp_list)
+    for x in range(len(tmp_list)):
+        str_list.append(tmp_list[x])
     #print(str_list)
+    str_list=list(set(str_list))
+    #print(str_list)
+    #提取spaticial stucture上的反属性关系，IFcRelaggregates
+
     ids=[]
     for j in range(len(str_list)):
         #print(extracte_ids(str(str_list[j])))
@@ -101,7 +126,7 @@ def extracte_entity_structure(path_file,type):
     #print(ids)
     #ids是它的引用，instance_id是它的id
     ids.insert(0,instance_id)
-    print(ids)
+    #print(ids)
     #return ids
 
     graph=model_graph(path_file,ids,None)
@@ -115,7 +140,7 @@ if __name__ == '__main__':
 
     #extract spatcial info
 
-    print(extracte_project_structure("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc"))
+    #print(extracte_project_structure("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc"))
     #extracte prodcut-levl info
 
-    print(extracte_entity_structure("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc", "IfcDoor"))
+    print(extracte_entity_structure("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc", "IfcWall"))

@@ -2,6 +2,7 @@ import os.path
 import extracte_metaInfo
 import ifcopenshell
 
+
 """
 extracete HEADER info from an *.ifc until it read DATA;
 para:*.ifc file absolute path

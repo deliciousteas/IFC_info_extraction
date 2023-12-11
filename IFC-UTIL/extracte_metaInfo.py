@@ -25,6 +25,7 @@ def extracte_project_structure(path_file)-> list:
     site=model.by_type("IfcSite")
     building=model.by_type("IfcBuilding")
     sotrey=model.by_type("IfcBuildingStorey")
+    #todo：添加IfcSpace
     #第一次ids是ids，
     str_list=[]
     str_list.append(project[0])
@@ -35,19 +36,19 @@ def extracte_project_structure(path_file)-> list:
         str_list.append(sotrey[i])
     #提取spatcial_structure 的reference id,第二次输出的是ids的引用id
     print(str_list)
-    tmp_list=[]
-    #添加空间结构的关系依赖
-    #todo:验证product和building之间的关系从product取还是从buidling拿
+    tmp_list = []
+    # 添加IfcSite、building、storey和project之间的空间结构
+    # end:product 和building之间的关系从product的ContainedInstructure、ReferencedInstructures拿
     for i in range(len(str_list)):
         print(str_list[i].is_a())
-        if len(str_list[i].IsDecomposedBy) !=0:
+        if len(str_list[i].IsDecomposedBy) != 0:
             tmp_list.append(str_list[i].IsDecomposedBy[0])
-        if len(str_list[i].Decomposes )!=0:
+        if len(str_list[i].Decomposes) != 0:
             tmp_list.append(str_list[i].Decomposes[0])
-        if str_list[i].is_a()!="IfcProject":
-            if len(str_list[i].ContainsElements)!=0:
-                print(str_list[i].ContainsElements)
-                tmp_list.append(str_list[i].ContainsElements[0])
+        # if str_list[i].is_a() != "IfcProject":
+        #     if len(str_list[i].ContainsElements) != 0:
+        #         print(str_list[i].ContainsElements)
+        #         tmp_list.append(str_list[i].ContainsElements[0])
         # if len(str_list[i].ServicedBySystems) != 0:
         #     str_list.append(str_list[i].ServicedBySystems[0])
         # if len(str_list[i].ReferencesElements) != 0:
@@ -55,20 +56,19 @@ def extracte_project_structure(path_file)-> list:
     print(tmp_list)
     for x in range(len(tmp_list)):
         str_list.append(tmp_list[x])
-    #print(str_list)
-    str_list=list(set(str_list))
-    #print(str_list)
-    #提取spaticial stucture上的反属性关系，IFcRelaggregates
+    # print(str_list)
+    str_list = list(set(str_list))
+    # print(str_list)
+    # 提取spaticial stucture上的反属性关系，IFcRelaggregates
 
-    ids=[]
+    ids = []
     for j in range(len(str_list)):
-        #print(extracte_ids(str(str_list[j])))
-        tmp_ids=extracte_ids(str(str_list[j]))
-        for i in range(1,len(tmp_ids)):
+        # print(extracte_ids(str(str_list[j])))
+        tmp_ids = extracte_ids(str(str_list[j]))
+        for i in range(1, len(tmp_ids)):
             ids.append(tmp_ids[i])
-        ids=list(set(ids))
-
-    #print(ids)
+        ids = list(set(ids))
+    print(ids)
     structure=model_graph(path_file,ids,graph=None)
     #print(structure)
     all_key=list(structure.keys())
@@ -126,13 +126,15 @@ def extracte_entity_structure(path_file,type):
     #print(ids)
     #ids是它的引用，instance_id是它的id
     ids.insert(0,instance_id)
-    #print(ids)
+    print(ids)
     #return ids
 
     graph=model_graph(path_file,ids,None)
     all_key = list(graph.keys())
     all_value = [val for sublist in graph.values() for val in sublist]
     entity_infoList = list(set(all_key + all_value))
+    #添加第i个instance的RelatedElements
+    entity_infoList.append(instance.ContainedInStructure[0].id())
     return entity_infoList
 
 
@@ -140,7 +142,7 @@ if __name__ == '__main__':
 
     #extract spatcial info
 
-    #print(extracte_project_structure("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc"))
+    print(extracte_project_structure("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc"))
     #extracte prodcut-levl info
 
-    print(extracte_entity_structure("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc", "IfcWall"))
+    print(extracte_entity_structure("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc", "IfcDoor"))

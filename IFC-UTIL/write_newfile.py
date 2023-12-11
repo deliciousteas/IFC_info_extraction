@@ -2,7 +2,6 @@ import os.path
 import extracte_metaInfo
 import ifcopenshell
 
-
 """
 extracete HEADER info from an *.ifc until it read DATA;
 para:*.ifc file absolute path
@@ -59,4 +58,4 @@ def WriteNewFIle(path_file,save_path,filename):
 
 
 if __name__ == '__main__':
-    WriteNewFIle("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc","D:\IFCOpenshell_python_version\Anaconda_ifc\IFC-source","walltest.ifc")
+    WriteNewFIle("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc","D:\IFCOpenshell_python_version\Anaconda_ifc\IFC-source","walltest2.ifc")

@@ -31,8 +31,8 @@ def WriteNewFIle(path_file,save_path,filename):
             project_ids=extracte_metaInfo.extracte_project_structure(path_file)
             print(project_ids)
 
-
-            prudtct_ids=extracte_metaInfo.extracte_entity_structure(path_file,"IfcWall")
+            #可更改测试所有entity还是单个entity
+            prudtct_ids=extracte_metaInfo.extracte_entity_structure(path_file,"IfcWall",True)
             print(prudtct_ids)
             list_all=[]
             for i in range(len(project_ids)):
@@ -58,4 +58,4 @@ def WriteNewFIle(path_file,save_path,filename):
 
 
 if __name__ == '__main__':
-    WriteNewFIle("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc","D:\IFCOpenshell_python_version\Anaconda_ifc\IFC-source","walltest2.ifc")
+    WriteNewFIle("..\data\SZW_RFJD_ARC_1F.ifc","..\output","Wall.ifc")

@@ -6,9 +6,9 @@ from OCC.Core.gp import gp_Pnt
 from OCC.Display.SimpleGui import init_display
 import ifcopenshell.geom
 import ifcopenshell
-
 from OCC.Core.TopoDS import TopoDS_Compound, TopoDS_Shape
-
+from OCC.Core.BRepGProp import brepgprop_VolumeProperties, brepgprop_SurfaceProperties
+from OCC.Core.GProp import GProp_GProps
 """
 BRepPrimAPI_MakeBox:CONSTRUCTOR
 继承关系：class BRepPrimAPI_MakeBox(OCC.Core.BRepBuilderAPI.BRepBuilderAPI_MakeShape):
@@ -31,21 +31,42 @@ BRepMesh_IncrementalMesh
 """
 """
 得到的ifc控件是TopoDS_Compound类型
+
+OCC.Core.BRepGProp 的 brepgprop_VolumeProperties
+引用 brepgprop.VolumeProperties(*args)method传递两参数
+S: TopoDS_Shape TopoDS_compound是他的子类
+        VProps: GProp_GProps 计算几何性质的class，提供了一组方法
 """
 
 if __name__ == '__main__':
 
-    ifc_path = ("D:\IFCOpenshell_python_version\Anaconda_ifc\IFC-source\walltest2.ifc")
+    ifc_path = ("..\output\DOOR1.ifc")
     model = ifcopenshell.open(ifc_path)
 
     # return an Brep model from ifc file
     settings = ifcopenshell.geom.settings()
     settings.set(settings.USE_PYTHON_OPENCASCADE, True)
-    wall = model.by_type("IfcWall")[0]
+    wall = model.by_type("IfcDoor")[0]
     # create a rough shape,*.geometry method will make this shape to TopoDS_Compound
     # thus return TopoDS_Compound INSTANCE
     wall_create_shape = ifcopenshell.geom.create_shape(settings, inst=wall)
     wall_shape=wall_create_shape.geometry
+
+    gprops = GProp_GProps()
+    volume_props = brepgprop_VolumeProperties(wall_shape, gprops, True, False, False)
+    volume = gprops.Mass()
+    print("体积:", volume)
+    # column volume and area
+    # volume_props=brepgprop_VolumeProperties(wall_shape)
+    # volume=volume_props.Mass()
+    # surface_props = brepgprop_SurfaceProperties(wall_shape)
+    # surface_area = surface_props.SurfaceArea()
+    # print("体积:", volume)
+    # print("表面积:", surface_area)
+
+
+
+
 
     # CONNECT wall_shape with bound_box
     compound_box=Bnd_Box()

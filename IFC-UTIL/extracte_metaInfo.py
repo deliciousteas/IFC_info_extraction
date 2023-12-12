@@ -11,8 +11,6 @@ def extracte_ids(text):
     pattern=r'#\d+'
     return [int(match[1:])for match in re.findall(pattern,text)]
 
-
-
 """"
 obtain   *.ifc file's IfcProject IfcSite IfcBuilding  IfcBuildingStorey reference id.
 :para:  *.ifc file absolute path such as :"D:\CimTestFile\SZW_RFJD_ARC_1F.ifc"
@@ -25,11 +23,13 @@ def extracte_project_structure(path_file)-> list:
     site=model.by_type("IfcSite")
     building=model.by_type("IfcBuilding")
     sotrey=model.by_type("IfcBuildingStorey")
-    #todo：添加IfcSpace
+    space=model.by_type("IfcSpace")
     #第一次ids是ids，
     str_list=[]
     str_list.append(project[0])
     str_list.append(site[0])
+    if len(space)!=0:
+        str_list.append(space[0])
     for i in range(len(building)):
         str_list.append(building[i])
     for i in range(len(sotrey)):
@@ -89,7 +89,7 @@ graph: default is None
 extract all reference by recursion.
 """
 def model_graph(path_file,id_array,graph=None):
-
+    #todo 太慢了，提取内容，都是大O(n平方)的过程，可以考虑先set后再考虑id号查询
     model=ifcopenshell.open(path_file)
     if graph is None:
         graph = {}
@@ -112,13 +112,16 @@ def model_graph(path_file,id_array,graph=None):
 
 """"
 先测试一个啊！！！！！！！！
-fucntion:提取entity中一个instance的位置和构形
+fucntion:提取entity中一个instance的位置和构形以及历史版本信息
 para：绝对路径，ifc ，entity-type
+
+可以接受改成提取多个instance的位置和构形
 """
 def extracte_entity_structure(path_file,type):
-    #path=path_file
+
     model = ifcopenshell.open(path_file)
     instances = model.by_type(type)
+    #test just one
     instance = instances[0]
     instance_id = instance.id()
     instance_text = str(instance)
@@ -126,23 +129,73 @@ def extracte_entity_structure(path_file,type):
     #print(ids)
     #ids是它的引用，instance_id是它的id
     ids.insert(0,instance_id)
+    #这里的id是他自身和它的直接引用
     print(ids)
-    #return ids
-
     graph=model_graph(path_file,ids,None)
     all_key = list(graph.keys())
     all_value = [val for sublist in graph.values() for val in sublist]
     entity_infoList = list(set(all_key + all_value))
-    #添加第i个instance的RelatedElements
+    #添加第i个instance的RelatedElements,!!!只需要添加一次就好。
     entity_infoList.append(instance.ContainedInStructure[0].id())
     return entity_infoList
+
+"""
+测试多个instances啊！！！！！！！！
+fucntion:提取entity中所有instance的位置和构形以及历史版本信息
+para：绝对路径，ifc ，entity-type，all_instance，如果为true就提取所有的，如果为false，就只提取一个
+
+可以接受改成提取多个instance的位置和构形
+"""
+
+
+def extracte_entity_structure(path_file,type,all_instance):
+     model = ifcopenshell.open(path_file)
+     instances = model.by_type(type)
+     if all_instance==True:
+         all_instance_list=[]
+         for i in range(len(instances)):
+             instance=instances[i]
+             instance_id = instance.id()
+             instance_text = str(instance)
+             ids = extracte_ids(instance_text)[1:]
+             ids.insert(0, instance_id)
+             for j in range(len(ids)):
+                all_instance_list.append(ids[j])
+         all_instance_list=list(set(all_instance_list))
+         graph = model_graph(path_file, all_instance_list, None)
+         all_key = list(graph.keys())
+         all_value = [val for sublist in graph.values() for val in sublist]
+         all_List = list(set(all_key + all_value))
+         all_List.append(instances[0].ContainedInStructure[0].id())
+         return all_List
+     else:
+         instance = instances[0]
+         instance_id = instance.id()
+         instance_text = str(instance)
+         ids = extracte_ids(instance_text)[1:]
+         # print(ids)
+         # ids是它的引用，instance_id是它的id
+         ids.insert(0, instance_id)
+         # 这里的id是他自身和它的直接引用
+         print(ids)
+         graph = model_graph(path_file, ids, None)
+         all_key = list(graph.keys())
+         all_value = [val for sublist in graph.values() for val in sublist]
+         entity_infoList = list(set(all_key + all_value))
+         # 添加第i个instance的RelatedElements,!!!只需要添加一次就好。
+         entity_infoList.append(instance.ContainedInStructure[0].id())
+         return entity_infoList
+
+
+
+
 
 
 if __name__ == '__main__':
 
     #extract spatcial info
 
-    print(extracte_project_structure("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc"))
+    print(extracte_project_structure("..\data\SZW_RFJD_ARC_1F.ifc"))
     #extracte prodcut-levl info
 
-    print(extracte_entity_structure("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc", "IfcDoor"))
+    print(extracte_entity_structure("..\data\SZW_RFJD_ARC_1F.ifc", "IfcDoor"))

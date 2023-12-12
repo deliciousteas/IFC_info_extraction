@@ -106,14 +106,15 @@ if __name__ =='__main__':
     relationship=model_graph("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc",preprocess)
     #(relationship)
 
-    create_newIFC("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc","D:\IFCOpenshell_python_version\Anaconda_ifc\IFC-source","newFile.ifc")
+    create_newIFC("D:\CimTestFile\SZW_RFJD_ARC_1F.ifc","D:\IFCOpenshell_python_version\Anaconda_ifc\IFC-source",
+                  "output/newFile.ifc")
 
     #把所有相关位置和构形的id记录下来
     all_key=list(relationship.keys())
     all_values = [val for sublist in relationship.values() for val in sublist]
     new_ifclist=list(set(all_key+all_values))
     print(new_ifclist)
-    with open("D:\IFCOpenshell_python_version\Anaconda_ifc\IFC-source\\newFile.ifc", 'a') as new_file:
+    with open("/IFC-source/output/newFile.ifc", 'a') as new_file:
         new_file.write("\n")
         new_file.write("DATA;\n")
         for i in range(0,len(new_ifclist)):

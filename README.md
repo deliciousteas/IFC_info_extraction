@@ -1,6 +1,12 @@
 # todo：
-1. 是否要将ifc转为mesh，然后针对性地开展城市形态学指标计算  
-2. 文件分割还是太慢，考虑用mapreduce对ifc文件分成product-level方法  
+1. IFC转为MESH,计算 Circularity、Convexity、Fractality、cohesion、Dispersion指标
+2. 文件分割慢，润色两个部分：  
+   * ~~考虑用mapreduce对ifc文件分成product-level方法~~
+   * I/O量，减少文件打开次数
+   * 递归函数优化，减少没必要的检索。
+3. 增加对material、color属性的存储
+4. 优化write_file程序的输入参数
+5. 考虑如何用并行计算加快处理。
 # done：
 ~~1. IFC信息提取位置和构形数据,meta-data,并且提取空间组织关系实体。~~   
 ~~2. 提取的IFC文件可以在bimvision打开~~  

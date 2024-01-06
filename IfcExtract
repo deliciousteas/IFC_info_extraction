@@ -1,0 +1,274 @@
+package org.example;
+
+import java.io.*;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+public class IFC {
+    /*
+     * :para 获取text的所有引用关系，包括自身
+     * ：return List<Integer>
+     * */
+    private static List<Integer> extractIds(String text) {
+        List<Integer> ids = new ArrayList<>();
+        Pattern pattern = Pattern.compile("#\\d+");
+        Matcher matcher = pattern.matcher(text);
+        while (matcher.find()) {
+            String match = matcher.group();
+            // 将匹配到的字符串中的数字部分转化为整数并添加到列表
+            int id = Integer.parseInt(match.substring(1));
+
+            ids.add(id);
+        }
+        return ids;
+    }
+
+    /*1.读取get_reference的所有引用关系，保存为Map<Integer,List<Integer>>*/
+    public static Map<Integer, List<Integer>> get_reference(String filePath) {
+
+        Map<Integer, List<Integer>> reference = new HashMap<>();
+        Reader reader = null;
+        try {
+            reader = new FileReader(filePath);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        BufferedReader br = new BufferedReader(reader);
+        String line;
+        try {
+            boolean begin_instance = false;
+            while ((line = br.readLine()) != null) {
+                if (!begin_instance) {
+                    if (line.trim().equals("DATA;")) {
+                        begin_instance = true;
+
+                    }
+                    continue;  // 跳过 "DATA;" 行之前的内容
+                }
+                List<Integer> ids = IFC.extractIds(line);
+                if (ids.size() > 1) {
+                    int node = ids.get(0);
+                    List<Integer> node_children = ids.subList(1, ids.size());
+                    reference.put(node, node_children);
+                }
+
+
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return reference;
+
+
+    }
+
+    /*
+          2.获取楼层相关的所有IFC信息，遍历
+
+        * */
+    public static List<String> Match_Spatialtucture(String filepath) {
+        List<String> IFC_String = new ArrayList<>(Arrays.asList("IfcProject", "IfcSite", "IfcBuilding", "IfcBuildingStorey", "IfcSpace", "IfcRelServicesBuildings", " IfcRelReferencedInSpatialStructure", "IfcRelContainedInSpatialStructure", "IfcRelAssignsToProduct"));
+        List<String> Matched_IFCString = new ArrayList<>();
+        Reader reader = null;
+        try {
+            reader = new FileReader(filepath);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        BufferedReader br = new BufferedReader(reader);
+        String line;
+        try {
+            boolean begin_instance = false;
+            while ((line = br.readLine()) != null) {
+                if (!begin_instance) {
+                    if (line.trim().equals("DATA;")) {
+                        begin_instance = true;
+                    }
+                    continue;  // 跳过 "DATA;" 行之前的内容
+                }
+                //存储IFC的引用关系，->reference
+
+                Pattern pattern = Pattern.compile("[a-zA-Z]+");
+                Matcher matcher = pattern.matcher(line);
+                //添加匹配的IFC几何关系,->Matched_IFCString
+                if (matcher.find()) {
+                    String match_output = matcher.group();
+
+                    for (int i = 0; i < IFC_String.size(); i++) {
+                        if (match_output.equals(IFC_String.get(i).toUpperCase()) || match_output.equals(IFC_String.get(i)))//equal判断内容，==判断是否是同一个引用。
+                        {
+                            //System.out.println(line); //测试结果使用
+                            Matched_IFCString.add(line);
+                        }
+                    }
+                }
+
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return Matched_IFCString;
+    }
+
+
+    /*
+    * 返回了所有id
+    * todo：限制访问所有id，只关心几何和位置。或者说访问构件级别约束下。
+    * */
+    public  List<Integer>recursive_ids(String filepath) {
+        List<Integer> id_structure = new ArrayList<>();
+        Map<Integer, List<Integer>> reference = IFC.get_reference(filepath);//所有的引用关系，之前做成功是因为构件的可以只访问几何和构型。
+        List<String> Match_line = IFC.Match_Spatialtucture(filepath);//匹配的文本
+        for (String s : Match_line) {
+            List<Integer> all_ids = new ArrayList<>();
+            all_ids = extractIds(s);
+            for (Integer id : all_ids) {
+                id_structure.add(id);//todo:需要过滤下。
+            }
+        }//所有直接引用的ids存储在id_structure
+        int previousSIze;
+        do {
+            previousSIze = id_structure.size();
+            for (Integer id : new ArrayList<>(id_structure)) {
+                List<Integer> values = reference.get(id);
+                if (values != null) {
+                    for (Integer value : values) {
+                        if (!id_structure.contains(value)) {
+                            id_structure.add(value);
+                        }
+                    }
+                }
+            }
+        } while (id_structure.size() > previousSIze);
+        id_structure = new ArrayList<>(new HashSet<>(id_structure));
+        Collections.sort(id_structure);
+
+        return id_structure;
+
+    }
+
+    public List<String>get_IFCContent(String filePath)
+    {
+
+        List<Integer>ids=recursive_ids(filePath);
+
+        //打开文件，如果每一行的开头是用ids开头，那么则保存到一个list<String>列表中。
+        List<String>ifc_content=new ArrayList<>();
+        Reader reader=null;
+        try{
+            reader=new FileReader(filePath);
+            BufferedReader br=new BufferedReader(reader);
+            String line;
+            try {
+                boolean begin_instance = false;
+                while((line=br.readLine())!=null)
+                {
+                    if (!begin_instance) {
+                        if (line.trim().equals("DATA;")) {
+                            begin_instance = true;
+                        }
+                        continue;  // 跳过 "DATA;" 行之前的内容
+                    }
+                    //写ifc里面的主要内容
+                    for(Integer id_num:ids)
+                    {
+                        String id="#"+id_num.toString();
+                        //System.out.println(line);
+                        if(line.trim().startsWith(id)&& line.trim()!=null)
+                        {
+                            ifc_content.add(line);
+                        }
+
+                    }
+                }
+            }catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+        }catch (FileNotFoundException e)
+        {
+            e.printStackTrace();
+        }
+        List<String>newList=new ArrayList<String >(new HashSet<String>(ifc_content));
+        //去重处理
+        //todo:去除IfcRelDefinesByProperties，propertyset、quantityset。测试
+        //List<String>DEFINELIST=new ArrayList<>(Arrays.asList("IfcRelDefinesByProperties"));
+        List<String> tests = Arrays.asList(
+                "IfcRelDefinesByObject",
+                "IfcRelDefinesByProperties",
+                "IfcRelDefinesByTemplate",
+                "IfcRelDefinesByType",
+                "IfcPropertySet",
+                "IfcQuantitySet"
+        );
+        Iterator<String> iterator = newList.iterator();
+        while (iterator.hasNext()) {
+            String s = iterator.next();
+            Pattern pattern_define = Pattern.compile("[a-zA-Z]+");
+            Matcher matcher = pattern_define.matcher(s);
+            if (matcher.find()) {
+                String match_output = matcher.group();
+                if (tests.contains(match_output) || tests.stream().anyMatch(test -> test.toUpperCase().equals(match_output))) {
+                    iterator.remove();
+                }
+            }
+        }
+
+
+        return newList;
+    }
+    public void writeIfc(String filePath, String outputPath, String filename)
+    {
+
+        List<String>IFCcontent=get_IFCContent(filePath);
+
+        String savePath = Paths.get(outputPath).toString();
+        String file_Path = Paths.get(savePath, filename).toString();
+
+        File modelFile = new File(file_Path);
+        if (modelFile.exists()) {
+            modelFile.delete();
+            System.out.println("DELETED EXISTING FILE: " + filename);
+        }
+
+        try (BufferedWriter newFileWriter = new BufferedWriter(new FileWriter(file_Path));
+             BufferedReader sourceFileReader = new BufferedReader(new FileReader(filePath))) {
+
+            String line;
+            while ((line = sourceFileReader.readLine()) != null) {
+                newFileWriter.write(line);
+                newFileWriter.newLine();
+
+                if (line.trim().equals("DATA;")) {
+                    break;
+                }
+            }
+            for(String s :IFCcontent)
+            {
+                newFileWriter.write(s);
+                newFileWriter.newLine();
+            }
+            newFileWriter.write("\n");
+            newFileWriter.write("ENDSEC;\n");
+            newFileWriter.write("END-ISO-10303-21;");
+            System.out.println(file_Path+"创建成功");
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+class Maintest {
+    public static void main(String[] args){
+        String path="你的文件路径";
+        IFC testifc=new IFC();
+        testifc.writeIfc(path,"保存路径","保存文件名字");
+
+
+    }
+}

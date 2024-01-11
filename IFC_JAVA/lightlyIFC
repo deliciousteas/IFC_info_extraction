@@ -1,0 +1,371 @@
+package org.example.IFC_lightly;
+import java.io.*;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+
+
+class IFC_lightly {
+
+    /*@func:获取一行文本的id引用关系
+    * @param:String text
+    * @retrun: list<Integer> ids
+    * */
+    private static List<Integer> extractIds(String text) {
+        List<Integer> ids = new ArrayList<>();
+        Pattern pattern = Pattern.compile("#\\d+");
+        Matcher matcher = pattern.matcher(text);
+        while (matcher.find()) {
+            String match = matcher.group(); // 将匹配到的字符串中的数字部分转化为整数并添加到列表
+            int id = Integer.parseInt(match.substring(1));
+
+            ids.add(id);
+        }
+        return ids;
+    }
+
+    /*@func:获取ifc文件中某些entity的id号
+     * @param:List<String>entityList，1-N个
+     * @param:String ifc_path,ifc文件路径
+     * @retrun: List(Integer) entity_ids
+     * */
+    public List<Integer> extract_entity_ids(String ifc_path,List<String>entityList)
+    {
+        //1. 读取ifc文件，一定要读的ifcentity,关于ifcstucture
+        List<String>necessary_entity=new ArrayList<>(Arrays.asList("IfcProject", "IfcSite", "IfcBuilding", "IfcBuildingStorey", "IfcSpace"));
+        if(!entityList.isEmpty())
+        {for(String s:entityList)
+            necessary_entity.add(s);
+        }
+
+        List<String>matchedLines=new ArrayList<>();//将necessary_entity内的entity所在line添加到matchedLines
+        Reader reader = null;
+        try {
+            reader = new FileReader(ifc_path);
+            BufferedReader br = new BufferedReader(reader);
+            String line;//匹配规则
+            Pattern text_pattern = Pattern.compile("[a-zA-Z]+");
+            while ((line = br.readLine()) != null) {
+                Matcher matcher_line = text_pattern.matcher(line);
+                if (matcher_line.find()) {
+                    String matchedContent = matcher_line.group();//匹配有bug
+                    if (necessary_entity.stream().anyMatch(test -> test.toLowerCase().equals(matchedContent.toLowerCase())) || matchedContent.toLowerCase().contains("value")) {
+                        matchedLines.add(line);
+                    }
+                }
+            }
+        }catch (FileNotFoundException e)
+        {
+            throw new RuntimeException(e);
+        }catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        List<Integer> entity_ids=new ArrayList<>();
+        if(!matchedLines.isEmpty())
+        {
+            Pattern num_pattern=Pattern.compile("#\\d+");
+            for(String s:matchedLines)
+            {Matcher matched_num=num_pattern.matcher(s);
+                if(matched_num.find())
+                {
+                    String match = matched_num.group();
+                    int id = Integer.parseInt(match.substring(1));
+                    entity_ids.add(id);
+                }
+            }
+
+        }
+        return entity_ids;
+    }
+
+    /*@func:获取IFC文件（去除属性）中所有line的直接引用关系
+     * @param:String filepath
+     * @retrun:  List<Integer> all_reference
+     * */
+    public List<Integer>get_allreference(String filepath) {
+        List<String> content = extracte(filepath);
+        List<Integer> all_reference = new ArrayList<>();//获得文件所有refernece
+        Iterator<String> iterator = content.iterator();
+        while (iterator.hasNext()) {
+            String line = iterator.next();//获取所有reference
+            List<Integer> ID = extractIds(line);//ID>=2说明引用关系存在
+            if (ID.size() >= 2) {
+                all_reference.addAll(ID);
+                all_reference.add(-1);//区分引用关系
+            }
+        }
+        return all_reference;
+    }
+    
+    
+    /*@func:去除IFC文件中属性描述的内容，返回保存文本。需要避免对源文件直接操作。
+     * @param:String filepath
+     * @retrun: List<String>
+     * */
+    public List<String> extracte(String filepath) {
+        List<String> tests = Arrays.asList(
+                "IfcRelDefinesByObject",
+                "IfcRelDefinesByProperties",
+                "IfcRelDefinesByTemplate",
+                "IfcRelDefinesByType",
+                "IfcPropertySet",
+                "IfcQuantitySet"
+        );
+        List<String> matchedLines = new ArrayList<>();
+        Reader reader = null;
+        try {
+            reader = new FileReader(filepath);
+            BufferedReader br = new BufferedReader(reader);
+            String line;
+            Pattern pattern_define = Pattern.compile("[a-zA-Z]+");
+            while ((line = br.readLine()) != null) {
+                Matcher matcher = pattern_define.matcher(line);
+                if (matcher.find()) {
+                    String matchedContent = matcher.group();
+                    if (tests.stream().anyMatch(test -> test.toLowerCase().equals(matchedContent.toLowerCase())) || matchedContent.toLowerCase().contains("value")) {
+                    } else {
+                        matchedLines.add(line);
+                    }
+                }
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return matchedLines;
+    }
+
+    /*@func:去除IFC文件中属性描述的内容后，返回保存文本，并保存到指定路径
+     * @param:String filepath，String outputpath，String filename
+     * */
+    public void writefile(String filepath, String outputpath, String filename) {
+        List<String> content = extracte(filepath);
+        String output = outputpath + "\\" + filename;
+        File outputFile = new File(output);
+        if (outputFile.exists()) {
+            outputFile.delete();
+            System.out.println("DELETED EXISTING FILE: " + filename);
+        }
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
+            for (String s : content) {
+                writer.write(s);
+                writer.newLine();
+            }
+            System.out.println(outputFile.getPath() + " 创建成功");
+        } catch (IOException e) {
+            System.out.println("写入文件时发生错误: " + e.getMessage());
+        }
+    }
+
+    /*
+    * @func:读取感兴趣的构件和必须entity的instances，保存到指定文件路径下。
+    * @Set<Integer>contents：待匹配的id列表
+    * @String fielpath：轻量化后的ifc文件
+    * @String outpath：文件保存路径
+    * String filename：新文件名字
+    * */
+    
+    public void writeContentFile(Set<Integer>contents,String fielpath,String outpath,String filename) {
+        String output = outpath + "\\" + filename;
+        File outputFile = new File(output);
+        if (outputFile.exists()) {
+            outputFile.delete();
+            System.out.println("DELETED EXISTING FILE: " + filename);
+        }
+        List<String> linecontent = new ArrayList<>();
+        //1. 打开文件
+        //2. 第一个匹配条件：按照content的id ，通过正则表达式“#\\d+”匹配line的第一个结果，如果匹配成功，将这一行保存在全局变量List<String>line_content
+        //3. 第二个匹配条件：如果有"IfcRelServicesBuildings", " IfcRelReferencedInSpatialStructure", "IfcRelContainedInSpatialStructure", "IfcRelAssignsToProduct"四个文本，用正则表达式“"[a-zA-Z]+",如果匹配上将line也加全局变量List<String>line_content
+
+        try (BufferedReader br = new BufferedReader(new FileReader(fielpath))) {
+            String line;
+            Pattern text2Pattern = Pattern.compile("[a-zA-Z]+");
+            List<String> IFC_Stringcontent = new ArrayList<>(Arrays.asList("IfcRelServicesBuildings", " IfcRelReferencedInSpatialStructure", "IfcRelContainedInSpatialStructure", "IfcRelAssignsToProduct","IfcRelAggregates"));
+            while ((line = br.readLine()) != null)//读取line
+            {
+                List<Integer> line_tmpList = extractIds(line);//匹配id所在行
+                if (line_tmpList.size() != 0) {
+                    if (contents.contains(line_tmpList.get(0))) {
+                        linecontent.add(line);
+                    }
+
+                    Matcher textMatcher = text2Pattern.matcher(line);//判断IFC_Stringcontent是否有
+                    if (textMatcher.find()) {
+                        String match = textMatcher.group();
+                        for (String s : IFC_Stringcontent) {
+                            if (match.equals(s.toUpperCase()) || match.equals((s))) {
+                                linecontent.add(line);
+                                System.out.println(line);
+                            }
+                        }
+
+                    }
+                }
+            }//读取完成
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(output)))
+        {  bw.write("ISO-10303-21;\n" +
+                "HEADER;\n" +
+                "FILE_DESCRIPTION(('ViewDefinition [ReferenceView_V1.2]','ExchangeRequirement [Architecture]'),'2;1');\n" +
+                "FILE_NAME('\\X2\\987976EE7F1653F7\\X0\\','2023-11-30T20:39:49+08:00',(''),(''),'ODA SDAI 22.12','23.0.1.318 - Exporter 23.0.1.318 - \\X2\\59077528\\X0\\ UI 23.0.1.318','');\n" +
+                "FILE_SCHEMA(('IFC4'));\n" +
+                "ENDSEC;\n" +
+                "DATA;\n");
+            bw.newLine();
+
+            for (String line2file : linecontent) {
+                bw.write(line2file);
+                bw.newLine();
+            }
+            bw.write("ENDSEC;\n" +
+                    "END-ISO-10303-21;");
+            bw.newLine();
+            System.out.println("File created: " + filename);
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+}
+    /*
+    * class：Node
+    * method：getValue()返回该node实例的value
+    * method:getValues()返回该node实例引用的所有value
+    * */
+
+class Node
+{
+    Integer value;
+    List<Node> all_node;//添加的是instance
+    Node(Integer value)
+    {
+        this.value=value;
+        this.all_node=new ArrayList<>();
+    }
+    public Integer getValue() {
+        return value;
+    }//获取本身
+    public List<Integer> getValues() {
+        List<Integer> values = new ArrayList<>();
+        Set<Node> visited = new HashSet<>();
+        getValuesRecursive(this, visited, values);
+        return values;
+    }
+
+    private void getValuesRecursive(Node node, Set<Node> visited, List<Integer> values) {
+        if (visited.contains(node)) {
+            return;
+        }
+        visited.add(node);
+        values.add(node.getValue());
+        for (Node child : node.all_node) {
+            getValuesRecursive(child, visited, values);
+        }
+    }
+}
+
+/*
+* class:graph
+* method:addEdge:为src添加target目标链接关系
+* 
+* */
+class Graph{
+    Map<Integer,Node> nodes;
+    Graph(){this.nodes=new HashMap<>();
+    }
+    void addEdge(Integer source, Integer target) {
+        Node sourceNode = getNode(source);
+        Node targetNode = getNode(target);
+        sourceNode.all_node.add(targetNode);
+    }
+    Node getNode(Integer value)
+    {
+        return nodes.computeIfAbsent(value,Node::new);//返回该node所在节点
+    }
+
+}
+
+
+
+class GraphBuilder {
+    /*function：将ifc引用关系保存为点和边关系
+    * @param:List<Integer> all_ref，IFC文件的所有引用关系
+    * */
+    Graph buildGraph(List<Integer> all_ref) {
+        Graph graph = new Graph();
+        List<Integer[]>refences=new ArrayList<>();
+        List<Integer>currentReference=new ArrayList<>();
+
+        for(Integer value :all_ref)
+        {
+            if(value==-1)//以-1为界限，将之前的value加入到currentReference列表中
+            {
+                if (!currentReference.isEmpty())
+            {
+                refences.add(currentReference.toArray(new Integer[0]));
+            }
+            currentReference.clear();
+            }else{currentReference.add(value);}
+        }// List<Integer[]>refences保存了所有的子引用关系
+
+        for(Integer[] reference:refences)
+        {
+            Integer source=reference[0];
+            for(int i=1;i<reference.length;i++)
+            {
+                Integer target=reference[i];
+                graph.addEdge(source,target);
+            }
+        }//each reference in references 添加edge
+        return graph;
+    }
+}
+
+
+class main_target {
+    public static void main(String[] args) {
+        /*
+        * 1. path：源文件，将源文件利用writefile方法去除属性等无关几何的信息。
+        * 2. all_reference：获取ifc文件的直接引用关系。
+        * 3. graph  基于图获取ifc文件的引用关系
+        * 4.ENTITY，content_ids ：ENTITY将感兴趣的entity放入列表中，通过extract_entity_ids方法获取所有entity的id号码于content_ids
+        * 5. writeContentFile 将引用关系写入新ifc文件中去。
+        * */
+        String path = "input\\SZW_RFJD_ARC_1F.ifc";
+        IFC_lightly demo1 = new IFC_lightly();
+        
+        //demo1.writefile(path,"output","lightlyIFC-1-10.ifc");
+        String lightlyPATH="output//lightlyIFC-1-10.ifc";
+
+
+        List<Integer> all_reference=demo1.get_allreference(lightlyPATH);
+
+        GraphBuilder builder = new GraphBuilder();
+        Graph graph = builder.buildGraph(all_reference);//生成graph中点和边的关系
+
+        //获取ifcslab的id,
+        List<String>ENTITY=new ArrayList<>(Arrays.asList("IFCSLAB"));
+        List<Integer> SLAB_IDS=demo1.extract_entity_ids(lightlyPATH,ENTITY);
+
+        Set<Integer>content_ids=new HashSet<>();//所有content的id号码
+        for(Integer num :SLAB_IDS)
+        {
+            List<Integer>values=graph.getNode(num).getValues();
+            for(Integer value:values)
+            {
+                content_ids.add(value);
+            }
+        }
+
+        demo1.writeContentFile(content_ids,lightlyPATH,"output","lightlyifc-1-11.ifc");
+        //System.out.println(graph.getNode(12721).getValue());//获取它本身
+        //System.out.println(graph.getNode(12721).getValues());//以12721为例，获取它的所有引用关系。
+    }
+
+
+
+}
